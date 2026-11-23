@@ -3,9 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d0f">
 <title>Streamed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preconnect" href="https://api.themoviedb.org">
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -54,6 +57,7 @@ img{display:block;max-width:100%}
 .pop a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;font-size:14px}
 .pop a:hover{background:rgba(255,255,255,.06)}
 .pop img{width:72px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:#222}
+.pop strong{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .pop small{display:block;color:var(--mute)}
 .pos{position:relative}
 
@@ -111,10 +115,11 @@ img{display:block;max-width:100%}
 .arrow.l{left:10px}.arrow.l svg{transform:rotate(-90deg)}
 .arrow.r{right:10px}.arrow.r svg{transform:rotate(90deg)}
 @media (hover:hover){
-  .row:hover .arrow{display:grid}
+  .row:hover .arrow, .row:focus-within .arrow{display:grid}
   .row:not(.has-left) .arrow.l{display:none}
 }
 .skel .thumb{animation:pulse 1.4s infinite}
+.skel h3{height:16px;width:70%;margin-top:12px;border-radius:4px;background:#1e1e23;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.5}}
 
 /* ---------- pages ---------- */
@@ -204,10 +209,8 @@ footer{padding:44px var(--pad) 48px;color:var(--mute);font-size:13px;line-height
 .seg button{padding:7px 14px;border-radius:999px;font-size:13.5px;color:var(--mute)}
 .seg button.on{background:#fff;color:#000;font-weight:600}
 
-/* ---------- account menu ---------- */
+/* ---------- account menu & utilities ---------- */
 .pop a svg{width:18px;height:18px;fill:currentColor;flex:none}
-#menu{width:220px}
-.ini{width:30px;height:30px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:700;font-size:14px}
 .no-zoom .card:hover .thumb img{transform:none}
 
 /* ---------- settings ---------- */
@@ -276,7 +279,7 @@ footer{padding:44px var(--pad) 48px;color:var(--mute);font-size:13px;line-height
   .nav.searching .brand{display:none}
   .nav.searching #q{flex:1;width:auto;min-width:0;font-size:16px}
   .pos{position:static}
-  .pop,#menu{top:calc(100% + 8px);left:0;right:0;width:auto;max-width:none}
+  .pop{top:calc(100% + 8px);left:0;right:0;width:auto;max-width:none}
 
   .bar{
     display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:50;
@@ -363,7 +366,7 @@ footer{padding:44px var(--pad) 48px;color:var(--mute);font-size:13px;line-height
 <body>
 
 <div class="nav-wrap">
-  <nav class="nav" id="nav" aria-label="Main">
+  <nav class="nav pos" id="nav" aria-label="Main">
     <a class="brand" href="#home" aria-label="Streamed home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#d8392b"/><path d="M10 7.5 17 12 10 16.5Z" fill="#fff"/></svg>
       <span>Streamed</span>
@@ -376,6 +379,7 @@ footer{padding:44px var(--pad) 48px;color:var(--mute);font-size:13px;line-height
     <input id="q" type="search" placeholder="Search titles" aria-label="Search titles" autocomplete="off">
     <button class="icon" id="sbtn" aria-label="Search"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 016.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1110 2zm0 2a6 6 0 100 12 6 6 0 000-12z"/></svg></button>
     <button class="icon" id="settingsBtn" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.70 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+    <div class="pop" id="searchPop" role="region" aria-label="Search suggestions"></div>
   </nav>
 </div>
 
@@ -460,13 +464,14 @@ function loadSettings() {
 let settings = loadSettings();
 function applySettings() {
   document.body.classList.toggle("no-zoom", !settings.hoverZoom);
+  if (settings.primary && HEX.test(settings.primary)) {
+    document.documentElement.style.setProperty("--accent", "#" + settings.primary);
+  }
 }
 function saveSettings() {
   try { localStorage.setItem("sf_settings", JSON.stringify(settings)); } catch {}
   applySettings();
 }
-
-const getProfile = () => { try { return JSON.parse(localStorage.getItem("sf_profile")); } catch { return null; } };
 
 /* =====================================================================
    helpers
@@ -554,7 +559,12 @@ function fillRow(sec, promise, type, opts) {
 }
 
 function setActive(p) {
-  $$("[data-p]").forEach(a => a.classList.toggle("on", a.dataset.p === p));
+  $$("[data-p]").forEach(a => {
+    const on = a.dataset.p === p;
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
 }
 
 function showError(e) {
@@ -646,15 +656,26 @@ async function buildHero(items) {
     `<button class="down" aria-label="Browse titles">${ico.chev}</button>`;
 
   let cur = 0;
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const go = n => {
     cur = (n + items.length) % items.length;
     $$(".slide", hero).forEach((sl, i) => sl.classList.toggle("on", i === cur));
-    $$(".dots button", hero).forEach((b, i) => b.classList.toggle("on", i === cur));
+    $$(".dots button", hero).forEach((b, i) => {
+      const on = i === cur;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-current", on ? "true" : "false");
+    });
   };
   const restart = () => {
     clearInterval(heroTimer);
-    if (multi && settings.heroRotate) heroTimer = setInterval(() => go(cur + 1), 9000);
+    if (multi && settings.heroRotate && !prefersReduced) heroTimer = setInterval(() => go(cur + 1), 9000);
   };
+  const pause = () => clearInterval(heroTimer);
+
+  hero.addEventListener("mouseenter", pause);
+  hero.addEventListener("mouseleave", restart);
+  hero.addEventListener("focusin", pause);
+  hero.addEventListener("focusout", restart);
 
   $$(".dots button", hero).forEach((b, i) => b.onclick = () => { go(i); restart(); });
   $(".down", hero).onclick = () => $("#rows").scrollIntoView({ behavior: "smooth" });
@@ -680,13 +701,17 @@ async function buildHero(items) {
 
 function openInfo(it) {
   const t = it.media_type || kind(it), dlg = $("#dlg");
+  const lastActive = document.activeElement;
+  dlg.setAttribute("aria-labelledby", "dlg-title");
   dlg.innerHTML = `<button class="icon x" aria-label="Close" onclick="this.closest('dialog').close()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.4" fill="none"/></svg></button>
     <img class="m-img" src="${IMG(it.backdrop_path, "w780")}" alt="">
-    <div class="m-body"><h3>${esc(it.title || it.name)}</h3>
+    <div class="m-body"><h3 id="dlg-title">${esc(it.title || it.name)}</h3>
     <div class="meta"><span>★ ${it.vote_average.toFixed(1)}</span><span>${t === "tv" ? "Series" : "Movie"}</span><span>${yr(it)}</span></div>
     <p class="ov">${esc(it.overview)}</p>
     <div class="btns"><a class="btn red" href="#title/${t}/${it.id}" onclick="document.getElementById('dlg').close()">${ico.play} Watch now</a></div></div>`;
   dlg.showModal();
+  dlg.querySelector(".x")?.focus();
+  dlg.addEventListener("close", () => { if (lastActive && typeof lastActive.focus === "function") lastActive.focus(); }, { once: true });
 }
 $("#dlg").addEventListener("click", e => { if (e.target.id === "dlg") e.target.close(); });
 
@@ -880,13 +905,8 @@ function notFound() {
 }
 
 /* =====================================================================
-   settings + login pages
+   settings page
    ===================================================================== */
-const ICON = {
-  gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
-  login: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>',
-  logout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>',
-};
 const SWATCH = {
   primary: ["d8392b", "f5b942", "ff4d6d", "38bdf8", "22c55e", "a78bfa", "ffffff"],
   icon: ["ffffff", "f5b942", "d8392b", "38bdf8", "22c55e", "a78bfa", "000000"],
@@ -894,7 +914,6 @@ const SWATCH = {
 
 function settingsPage(section) {
   document.title = `Settings · ${CONFIG.SITE_NAME}`;
-  const profile = getProfile();
   const sw = (k, title, desc) => `<div class="sr tog"><div><h3>${title}</h3><p>${desc}</p></div>
     <button class="sw" role="switch" aria-checked="${settings[k]}" aria-label="${title}" data-sw="${k}"></button></div>`;
   const colors = (k, title) => `<div class="crow"><span>${title}</span><div class="sws">
@@ -962,7 +981,6 @@ function settingsPage(section) {
     else if (t.dataset.sw) { settings[t.dataset.sw] = !settings[t.dataset.sw]; commit(false); }
     else if (t.dataset.seg) { settings[t.dataset.seg] = t.dataset.v; commit(false); }
     else if (t.dataset.act === "reset") { settings = { ...DEFAULTS }; commit(); }
-    else if (t.dataset.act === "logout") logout();
   });
   main.addEventListener("input", e => {
     if (e.target.type === "color" && HEX.test(e.target.value.slice(1))) { settings[e.target.dataset.k] = e.target.value.slice(1).toLowerCase(); commit(); }
@@ -993,35 +1011,6 @@ function settingsPage(section) {
   if (["player", "browsing", "api"].includes(section)) requestAnimationFrame(() => goTo(section, false)); else mark("player");
 }
 
-function loginPage() {
-  document.title = `Log in · ${CONFIG.SITE_NAME}`;
-  const p = getProfile();
-  app.innerHTML = p
-    ? `<div class="setup"><form id="lf"><h1>Logged in as ${esc(p.name)}</h1>
-        <p>Log out to switch to a different profile.</p>
-        <button class="btn red" type="submit">Log out</button>
-        <small>Your profile is saved locally in this browser.</small></form></div>`
-    : `<div class="setup"><form id="lf"><h1>Log in</h1>
-        <p>Enter a name for your profile.</p>
-        <input id="lin" placeholder="Display name" maxlength="24" autocomplete="nickname" required>
-        <button class="btn red" type="submit">Log in</button>
-        <small>Your profile is saved locally in this browser.</small></form></div>`;
-  $("#lf").onsubmit = e => {
-    e.preventDefault();
-    if (p) return logout();
-    const name = $("#lin").value.trim();
-    if (!name) return;
-    localStorage.setItem("sf_profile", JSON.stringify({ name }));
-    location.hash = "#home";
-  };
-}
-
-function logout() {
-  localStorage.removeItem("sf_profile");
-  closePops();
-  if (location.hash === "#home" || location.hash.startsWith("#settings")) route(); else location.hash = "#home";
-}
-
 /* =====================================================================
    router:  #home  #movies  #movies/28  #series  #series/18  #4k
             #search/query  #title/movie/ID  #title/tv/ID
@@ -1035,7 +1024,7 @@ async function route() {
   closePops();
   window.scrollTo(0, 0);
   try {
-    if (!getKey() && page !== "settings" && page !== "login") throw new Error("NO_KEY");
+    if (!getKey() && page !== "settings") throw new Error("NO_KEY");
     switch (page) {
       case "home": return await home();
       case "movies": if (a) { location.hash = `#discover?type=movie&genre=${a}`; return; } return await featuredPage("movie");
@@ -1045,7 +1034,6 @@ async function route() {
       case "search": return searchPage(decodeURIComponent(a || ""));
       case "title": return await titlePage(a, b);
       case "settings": return settingsPage(a);
-      case "login": return loginPage();
       default: return notFound();
     }
   } catch (e) { showError(e); }
@@ -1053,20 +1041,76 @@ async function route() {
 addEventListener("hashchange", route);
 
 /* =====================================================================
-   nav: search, notifications, settings
+   nav: search & settings
    ===================================================================== */
-const nav = $("#nav"), q = $("#q");
-$("#sbtn").onclick = () => {
-  if (nav.classList.toggle("searching")) q.focus();
-  else if (q.value.trim()) location.hash = "#search/" + encodeURIComponent(q.value.trim());
-};
-q.addEventListener("keydown", e => {
-  if (e.key === "Enter" && q.value.trim()) { location.hash = "#search/" + encodeURIComponent(q.value.trim()); }
-  if (e.key === "Escape") { nav.classList.remove("searching"); q.blur(); }
-});
-q.addEventListener("blur", () => { if (!q.value.trim()) nav.classList.remove("searching"); });
+const nav = $("#nav"), q = $("#q"), searchPop = $("#searchPop");
+let searchDebounceTimer = null;
 
-const menu = $("#menu");
+async function renderSearchPreview(val) {
+  if (!getKey()) return;
+  try {
+    const d = await tmdb("/search/multi", { query: val, page: 1 });
+    if (q.value.trim() !== val) return;
+    const items = (d.results || []).filter(r => (r.media_type === "movie" || r.media_type === "tv") && hasImg(r)).slice(0, 5);
+    if (!items.length) {
+      searchPop.innerHTML = `<h4>Suggestions</h4><p style="padding:8px 10px;font-size:13.5px;color:var(--mute)">No titles found.</p>`;
+    } else {
+      searchPop.innerHTML = `<h4>Suggestions</h4>` +
+        items.map(it => {
+          const t = it.media_type || kind(it);
+          const name = it.title || it.name;
+          const img = IMG(it.backdrop_path || it.poster_path, "w500");
+          const score = it.vote_average ? it.vote_average.toFixed(1) : "";
+          return `<a href="#title/${t}/${it.id}">
+            <img src="${img}" alt="">
+            <div style="min-width:0">
+              <strong>${esc(name)}</strong>
+              <small>${score ? "★ " + score + " · " : ""}${t === "tv" ? "Series" : "Movie"} · ${yr(it)}</small>
+            </div>
+          </a>`;
+        }).join("") +
+        `<a href="#search/${encodeURIComponent(val)}" style="justify-content:center;color:var(--mute);font-size:13px;border-top:1px solid var(--line);margin-top:4px;padding-top:10px">See all results for “${esc(val)}”</a>`;
+    }
+    searchPop.classList.add("open");
+  } catch (err) {}
+}
+
+$("#sbtn").onclick = () => {
+  if (nav.classList.toggle("searching")) {
+    q.focus();
+    if (q.value.trim().length >= 2) renderSearchPreview(q.value.trim());
+  } else if (q.value.trim()) {
+    closePops();
+    location.hash = "#search/" + encodeURIComponent(q.value.trim());
+  }
+};
+q.addEventListener("input", () => {
+  clearTimeout(searchDebounceTimer);
+  const val = q.value.trim();
+  if (val.length < 2) {
+    searchPop.classList.remove("open");
+    searchPop.innerHTML = "";
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => renderSearchPreview(val), 250);
+});
+q.addEventListener("keydown", e => {
+  if (e.key === "Enter" && q.value.trim()) {
+    closePops();
+    location.hash = "#search/" + encodeURIComponent(q.value.trim());
+  }
+  if (e.key === "Escape") {
+    closePops();
+    nav.classList.remove("searching");
+    q.blur();
+  }
+});
+q.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (!q.value.trim()) nav.classList.remove("searching");
+  }, 200);
+});
+
 const closePops = () => $$(".pop").forEach(p => p.classList.remove("open"));
 function togglePop(pop) {
   const open = !pop.classList.contains("open");
