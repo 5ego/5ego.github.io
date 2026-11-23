@@ -62,12 +62,13 @@ img{display:block;max-width:100%}
 .pos{position:relative}
 
 /* ---------- hero ---------- */
-.hero{position:relative;height:min(92vh,880px);min-height:520px;overflow:hidden}
-.slide{position:absolute;inset:0;opacity:0;transition:opacity .9s;pointer-events:none}
-.slide.on{opacity:1;pointer-events:auto}
-.slide>img.bg{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.hero{position:relative;height:min(92vh,880px);min-height:520px;overflow:hidden;background:#0d0d0f}
+.slide{position:absolute;inset:0;opacity:0;z-index:1;transition:opacity .65s ease;pointer-events:none}
+.slide.on{opacity:1;z-index:3;pointer-events:auto}
+.slide.prev{opacity:1;z-index:2;pointer-events:none}
+.slide>img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;z-index:1}
 .slide>img.bg{-webkit-mask-image:linear-gradient(180deg,#000 66%,transparent 100%);mask-image:linear-gradient(180deg,#000 66%,transparent 100%)}
-.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+.slide::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
   background:linear-gradient(90deg,rgba(13,13,15,.88) 0%,rgba(13,13,15,.25) 55%,transparent 80%)}
 .hero-copy{position:absolute;z-index:3;left:var(--pad);top:50%;transform:translateY(-62%);max-width:min(560px,86vw)}
 .hero-copy .logo{max-height:150px;max-width:100%;width:auto;object-fit:contain;object-position:left}
@@ -82,10 +83,10 @@ img{display:block;max-width:100%}
 .btn.dark{background:rgba(20,20,22,.7);border:1px solid var(--line);backdrop-filter:blur(8px)}
 .btn.dark:hover{background:rgba(40,40,44,.8)}
 .btn.red{background:var(--accent);color:#fff}
-.dots{position:absolute;z-index:3;right:var(--pad);bottom:56px;display:flex;gap:8px}
+.dots{position:absolute;z-index:10;right:var(--pad);bottom:56px;display:flex;gap:8px}
 .dots button{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35)}
 .dots button.on{background:#fff;width:26px;border-radius:5px;transition:width .3s}
-.down{position:absolute;z-index:3;left:50%;bottom:22px;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;
+.down{position:absolute;z-index:10;left:50%;bottom:22px;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;
   background:rgba(20,20,22,.8);border:1px solid var(--line);display:grid;place-items:center}
 .down svg{width:20px;height:20px;fill:#fff;transform:rotate(180deg)}
 
@@ -294,7 +295,7 @@ footer{padding:44px var(--pad) 48px;color:var(--mute);font-size:13px;line-height
 
   /* hero: copy sits at the bottom, swipe to change slide */
   .hero{height:72vh;height:72svh;min-height:440px;max-height:640px;touch-action:pan-y}
-  .hero::after{background:linear-gradient(90deg,rgba(13,13,15,.5),transparent 70%)}
+  .slide::after{background:linear-gradient(90deg,rgba(13,13,15,.5),transparent 70%)}
   .slide>img.bg{object-position:62% 20%}
   .hero-copy{top:auto;bottom:80px;left:var(--pad);right:var(--pad);max-width:none;transform:none}
   .hero-copy .logo{max-height:84px}
@@ -436,6 +437,9 @@ const CONFIG = {
 /* =====================================================================
    settings (saved in this browser)
    ===================================================================== */
+const SERVERS = [
+  { id: "vidgold",   name: "Server 1 (Vidgold)", movie: "https://player.vidgold.net/embed/movie/{id}", tv: "https://player.vidgold.net/embed/tv/{id}/{season}/{episode}", custom: true },
+];
 const PLAYERS = [
   { id: "default2",   name: "Default",      d: "New look, every feature" },
   { id: "classic",    name: "Classic",      d: "The previous look" },
@@ -448,17 +452,18 @@ const PLAYERS = [
   { id: "mc-slate",   name: "Slate",        d: "Classic bar" },
   { id: "onyx",       name: "Onyx",         d: "Cinema, skip buttons" },
 ];
-const DEFAULTS = { player: "default2", primary: "d8392b", icon: "ffffff", autoplay: false, heroRotate: true, hoverZoom: true };
+const DEFAULTS = { server: "vidgold", player: "default2", primary: "d8392b", icon: "ffffff", autoplay: false, heroRotate: true, hoverZoom: true, titledThumbs: true };
 const HEX = /^[0-9a-f]{6}$/i;
 
 function loadSettings() {
   let o = {};
   try { o = JSON.parse(localStorage.getItem("sf_settings")) || {}; } catch {}
   const st = { ...DEFAULTS, ...o };
+  if (!SERVERS.some(s => s.id === st.server)) st.server = DEFAULTS.server;
   if (!PLAYERS.some(p => p.id === st.player)) st.player = DEFAULTS.player;
   delete st.secondary;
   for (const k of ["primary", "icon"]) if (!HEX.test(st[k])) st[k] = DEFAULTS[k];
-  for (const k of ["autoplay", "heroRotate", "hoverZoom"]) st[k] = !!st[k];
+  for (const k of ["autoplay", "heroRotate", "hoverZoom", "titledThumbs"]) st[k] = !!st[k];
   return st;
 }
 let settings = loadSettings();
@@ -490,7 +495,12 @@ const iso = d => d.toISOString().slice(0, 10);
 const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
 const yr = it => (it.release_date || it.first_air_date || "").slice(0, 4);
 const kind = it => (it.media_type === "tv" || (it.first_air_date !== undefined && it.title === undefined)) ? "tv" : "movie";
-const hasImg = it => it && (it.backdrop_path || it.poster_path);
+const isBlockedTitle = it => {
+  if (!it) return false;
+  const str = `${it.title || ""} ${it.name || ""} ${it.original_title || ""} ${it.original_name || ""}`.toLowerCase();
+  return str.includes("fights break sphere") || str.includes("battle through the heavens") || str.includes("dou po cang qiong") || it.id === 81500;
+};
+const hasImg = it => it && (it.backdrop_path || it.poster_path) && !isBlockedTitle(it);
 
 /* =====================================================================
    TMDB
@@ -520,13 +530,54 @@ async function tmdb(path, params = {}) {
 /* =====================================================================
    building blocks
    ===================================================================== */
+const enBackdropCache = new Map();
+
+async function fetchEnBackdrop(type, id) {
+  const key = `${type}_${id}`;
+  if (enBackdropCache.has(key)) return enBackdropCache.get(key);
+  const p = tmdb(`/${type}/${id}/images`, { include_image_language: "en" })
+    .then(r => {
+      const en = (r.backdrops || []).find(b => b.iso_639_1 === "en");
+      return en ? en.file_path : null;
+    })
+    .catch(() => null);
+  enBackdropCache.set(key, p);
+  return p;
+}
+
+let thumbObserver = null;
+function observeCardThumbs(container = document) {
+  if (!settings.titledThumbs) return;
+  if (!thumbObserver) {
+    thumbObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          obs.unobserve(img);
+          const type = img.dataset.type, id = img.dataset.tid;
+          if (type && id) {
+            fetchEnBackdrop(type, id).then(enPath => {
+              if (enPath && img.isConnected) {
+                const pre = new Image();
+                pre.onload = () => { if (img.isConnected) img.src = IMG(enPath, "w1280"); };
+                pre.src = IMG(enPath, "w1280");
+              }
+            });
+          }
+        }
+      });
+    }, { rootMargin: "300px" });
+  }
+  $$("img[data-tid]", container).forEach(img => thumbObserver.observe(img));
+}
+
 function card(it, type, opts = {}) {
   const t = type || it.media_type || kind(it);
   const name = it.title || it.name;
   const img = IMG(it.backdrop_path || it.poster_path, "w1280");
   const score = it.vote_average ? it.vote_average.toFixed(1) : "–";
   return `<a class="card" href="#title/${t}/${it.id}">
-    <div class="thumb">${opts.rank ? `<span class="rank">${opts.rank}</span>` : ""}<img loading="lazy" src="${img}" alt="${esc(name)}"><span class="play-overlay" aria-hidden="true"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></span></div>
+    <div class="thumb">${opts.rank ? `<span class="rank">${opts.rank}</span>` : ""}<img loading="lazy" src="${img}" alt="${esc(name)}" data-tid="${it.id}" data-type="${t}"><span class="play-overlay" aria-hidden="true"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></span></div>
     <h3>${esc(name)}</h3>
     <p>★ ${score} · ${t === "tv" ? "Series" : "Movie"} · ${yr(it)}</p>
   </a>`;
@@ -555,6 +606,7 @@ function fillRow(sec, promise, type, opts) {
     items = items.filter(hasImg);
     if (!items.length) { sec.remove(); return; }
     $(".track", sec).innerHTML = items.map((i, n) => card(i, type || undefined, { ...opts, rank: opts?.ranked ? n + 1 : 0 })).join("");
+    observeCardThumbs(sec);
   }).catch(() => sec.remove());
 }
 
@@ -617,7 +669,9 @@ async function home() {
   try {
     const d = await tmdb("/trending/all/day");
     if (my !== token) return;
-    buildHero(d.results.filter(x => x.backdrop_path && x.media_type !== "person").slice(0, 6));
+    const candidates = d.results.filter(x => hasImg(x) && x.media_type !== "person" && (x.vote_count || 0) >= 80);
+    const list = candidates.length >= 4 ? candidates : d.results.filter(x => hasImg(x) && x.media_type !== "person" && (x.vote_count || 0) >= 20);
+    buildHero(list.slice(0, 6));
   } catch (e) { if (my === token) showError(e); }
 }
 
@@ -655,11 +709,29 @@ async function buildHero(items) {
   }).join("") + (multi ? `<div class="dots">${items.map((_, i) => `<button aria-label="Slide ${i + 1}" class="${i === 0 ? "on" : ""}"></button>`).join("")}</div>` : "") +
     `<button class="down" aria-label="Browse titles">${ico.chev}</button>`;
 
-  let cur = 0;
+  let cur = 0, prev = -1, transTimer = null;
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const go = n => {
+    prev = cur;
     cur = (n + items.length) % items.length;
-    $$(".slide", hero).forEach((sl, i) => sl.classList.toggle("on", i === cur));
+    const slides = $$(".slide", hero);
+    slides.forEach((sl, i) => {
+      sl.classList.remove("prev");
+      if (i === cur) {
+        sl.classList.add("on");
+      } else if (i === prev) {
+        sl.classList.add("prev");
+        sl.classList.remove("on");
+      } else {
+        sl.classList.remove("on");
+      }
+    });
+    clearTimeout(transTimer);
+    transTimer = setTimeout(() => {
+      slides.forEach((sl, i) => {
+        if (i !== cur) sl.classList.remove("prev", "on");
+      });
+    }, 800);
     $$(".dots button", hero).forEach((b, i) => {
       const on = i === cur;
       b.classList.toggle("on", on);
@@ -729,6 +801,7 @@ async function gridPage({ title, chips = "", head = "", hideTitle = false, fetch
       if (first) { grid.innerHTML = ""; first = false; }
       const html = items.filter(hasImg).map(i => card(i, type || undefined, { k4 })).join("");
       grid.insertAdjacentHTML("beforeend", html);
+      observeCardThumbs(grid);
       if (!grid.children.length) grid.innerHTML = '<p class="empty">Nothing found. Try different filters.</p>';
       more.hidden = !hasMore; page++;
     } catch (e) { if (my === token) showError(e); }
@@ -757,10 +830,12 @@ async function featuredPage(kind) {
   const rd = p => p.then(d => d.results);
   const add = (title, promise, o = {}) => { const sec = makeRow(title, o); rows.appendChild(sec); fillRow(sec, promise, type, o); };
   try {
-    const top = uhd ? await uhdList(1) : await rd(tmdb(`/trending/${type}/day`));
+    const rawTop = uhd ? await uhdList(1) : await rd(tmdb(`/trending/${type}/day`));
     if (my !== token) return;
-    const pool = top.filter(x => x.backdrop_path).slice(0, 5);
-    if (pool.length) buildHero([{ ...pool[uhd ? 0 : Math.floor(Math.random() * pool.length)], media_type: type }]);
+    const top = rawTop.filter(hasImg);
+    const pool = top.filter(x => x.backdrop_path && (uhd || (x.vote_count || 0) >= 60));
+    const validPool = pool.length ? pool : top.filter(x => x.backdrop_path);
+    if (validPool.length) buildHero([{ ...validPool[uhd ? 0 : Math.floor(Math.random() * Math.min(validPool.length, 5))], media_type: type }]);
     add(uhd ? "Top 10 in 4K" : `Top 10 ${label} today`, Promise.resolve(top.slice(0, 10)), { ranked: true, k4: uhd });
 
     if (uhd && CONFIG.UHD_MOVIE_IDS.length) {
@@ -839,7 +914,12 @@ function searchPage(q) {
 /* ---- title page ---- */
 function embedSrc(type, id, s = 1, e = 1, over = {}) {
   const o = { ...settings, ...over };
-  const base = (type === "tv" ? CONFIG.TV_EMBED : CONFIG.MOVIE_EMBED).replace("{id}", id).replace("{season}", s).replace("{episode}", e);
+  const base = (() => {
+    const srv = SERVERS.find(sv => sv.id === o.server) || SERVERS.find(sv => sv.id === DEFAULTS.server);
+    const tpl = type === "tv" ? srv.tv : srv.movie;
+    if (!tpl) return (type === "tv" ? CONFIG.TV_EMBED : CONFIG.MOVIE_EMBED).replace("{id}", id).replace("{season}", s).replace("{episode}", e);
+    return tpl.replace("{id}", id).replace("{season}", s).replace("{episode}", e);
+  })();
   // "classic" is the player's plain look: it has no player= parameter at all.
   const q = [];
   if (o.player !== "classic") q.push(`player=${o.player}`);
@@ -939,6 +1019,7 @@ function settingsPage(section) {
       <section id="s-browsing" data-sec="browsing"><h2 class="sh">Browsing</h2><div class="sg">
         ${sw("heroRotate", "Rotate featured titles", "Change the featured title at the top of Home every few seconds.")}
         ${sw("hoverZoom", "Zoom pictures on hover", "Slightly enlarge a picture when you point at it.")}
+        ${sw("titledThumbs", "Title in thumbnails", "Show artwork with the English movie or series logo when available from TMDB.")}
       </div></section>
 
       <section id="s-api" data-sec="api"><h2 class="sh">API</h2><div class="sg">
