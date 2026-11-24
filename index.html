@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d0d0f">
 <title>Streamed</title>
@@ -253,9 +254,6 @@ a.pc:hover b{text-decoration:underline}
 
 /* ---------- episodes row on title page ---------- */
 .ep-sec{padding:10px 0 34px}
-.ep-head{display:flex;align-items:center;justify-content:space-between;padding:0 var(--pad);margin-bottom:16px}
-.ep-track{display:flex;gap:18px;overflow-x:auto;padding:4px var(--pad) 8px;scroll-snap-type:x proximity;scrollbar-width:none;scroll-padding:0 var(--pad)}
-.ep-track::-webkit-scrollbar{display:none}
 .ep-card{flex:0 0 clamp(260px,22vw,360px);min-width:0;scroll-snap-align:start;display:block}
 .ep-thumb{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;background:#1b1b1f}
 .ep-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
@@ -289,9 +287,6 @@ a.pc:hover b{text-decoration:underline}
 /* watch sidebar */
 .watch-sidebar{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;max-height:calc(100vh - 110px);position:sticky;top:84px}
 .sb-head{position:relative;z-index:20;padding:12px 14px;border-bottom:1px solid var(--line);border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(20,20,24,.8)}
-.sb-season-sel{height:36px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--line);font:inherit;font-size:13.5px;font-weight:600;outline:0;cursor:pointer}
-.sb-season-sel:focus{border-color:#fff}
-.sb-season-sel option{background:#1b1b1f;color:#fff}
 .sb-nav{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
 .sb-nav-btn{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;place-items:center;font-size:15px;line-height:1;cursor:pointer}
 .sb-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.15);color:#fff}
@@ -570,6 +565,10 @@ const CONFIG = {
   // Paste your TMDB key here (v3 key or v4 read token) or leave empty to be asked once.
   TMDB_KEY: "",
 
+  // Private mode: paste the line produced by encrypt-key.html here. When set, the site shows a
+  // password screen and your TMDB key is only ever stored encrypted in this file.
+  ENC_KEY: {"salt":"au/t+qDSwcXTvXKvxXyDAg==","iv":"KuBmGJ9QUUFwk7ID","ct":"49nuXpRyEAkGq1vadf1nb1BIBk3Zp+LCinSIJABkomNdG68bJl/0WdKWu4wDMOhG"},
+
   // Your player, without the query string. The player style, colours and autoplay
   // are added from the Settings page. {id} is the TMDB id.
   MOVIE_EMBED: "https://player.vidgold.net/embed/movie/{id}",
@@ -661,6 +660,17 @@ const hasImg = it => it && (it.backdrop_path || it.poster_path) && !isBlockedTit
    ===================================================================== */
 const cache = new Map();
 const getKey = () => (CONFIG.TMDB_KEY || localStorage.getItem("sf_tmdb_key") || "").trim();
+
+async function decryptKey(password) {
+  const b = CONFIG.ENC_KEY, te = new TextEncoder();
+  const from = x => Uint8Array.from(atob(x), c => c.charCodeAt(0));
+  const base = await crypto.subtle.importKey("raw", te.encode(password), "PBKDF2", false, ["deriveKey"]);
+  const k = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: from(b.salt), iterations: 600000, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: from(b.iv) }, k, from(b.ct));
+  return new TextDecoder().decode(pt);   // throws if the password is wrong
+}
 
 async function tmdb(path, params = {}) {
   const key = getKey();
@@ -787,7 +797,28 @@ function showError(e) {
   app.innerHTML = `<div class="err"><h2>Something went wrong</h2><p>${esc(e.message)}. Check your connection and try again.</p></div>`;
 }
 
+function loginScreen(bad) {
+  app.innerHTML = `<div class="setup"><form id="lf">
+    <h1>Log in</h1>
+    <p>${bad ? "Wrong password. Try again." : "Enter your password to unlock the site."}</p>
+    <input id="lpw" type="password" placeholder="Password" autocomplete="current-password" required autofocus>
+    <button class="btn red" type="submit">Log in</button>
+    <small>Stays unlocked in this browser.</small>
+  </form></div>`;
+  $("#lf").onsubmit = async e => {
+    e.preventDefault();
+    const btn = $("#lf button"); btn.disabled = true; btn.textContent = "Unlocking…";
+    try {
+      const k = await decryptKey($("#lpw").value);
+      localStorage.setItem("sf_tmdb_key", k);
+      cache.clear();
+      route();
+    } catch { loginScreen(true); }
+  };
+}
+
 function setup(bad) {
+  if (CONFIG.ENC_KEY) return loginScreen(bad);
   app.innerHTML = `<div class="setup"><form id="kf">
     <h1>Add your TMDB API key</h1>
     <p>${bad
@@ -1680,7 +1711,7 @@ function settingsPage(section) {
     <nav class="set-nav" aria-label="Settings sections">
       <a href="#settings/player" data-s="player">Player</a>
       <a href="#settings/browsing" data-s="browsing">Browsing</a>
-      <a href="#settings/api" data-s="api">API</a>
+      ${CONFIG.ENC_KEY ? "" : `<a href="#settings/api" data-s="api">API</a>`}
     </nav>
     <div class="set-main">
       <section id="s-player" data-sec="player"><h2 class="sh">Player</h2><div class="sg">
@@ -1698,12 +1729,12 @@ function settingsPage(section) {
         ${sw("titledThumbs", "Title in thumbnails", "Show artwork with the English movie or series logo when available from TMDB.")}
       </div></section>
 
-      <section id="s-api" data-sec="api"><h2 class="sh">API</h2><div class="sg">
+      ${CONFIG.ENC_KEY ? "" : `<section id="s-api" data-sec="api"><h2 class="sh">API</h2><div class="sg">
         <div class="sr"><h3>TMDB API key</h3><p>Used for titles, posters and ratings. Saved locally in this browser.</p>
           <form class="keyf" id="kf2"><input type="password" id="kin2" autocomplete="off" aria-label="TMDB API key"
             placeholder="${getKey() ? "Key saved. Paste a new one to replace it" : "Paste your TMDB key"}">
             <button class="pill solid" type="submit">Save</button></form><p class="hint" id="kmsg" role="status"></p></div>
-      </div></section>
+      </div></section>`}
 
 
       <section><div class="sg"><div class="sr tog"><div><h3>Reset settings</h3><p>Return the player and browsing options to their defaults.</p></div>
@@ -1740,7 +1771,7 @@ function settingsPage(section) {
   main.addEventListener("input", e => {
     if (e.target.type === "color" && HEX.test(e.target.value.slice(1))) { settings[e.target.dataset.k] = e.target.value.slice(1).toLowerCase(); commit(); }
   });
-  $("#kf2").onsubmit = e => {
+  if ($("#kf2")) $("#kf2").onsubmit = e => {
     e.preventDefault();
     const v = $("#kin2").value.trim();
     if (!v) return;
@@ -1758,12 +1789,12 @@ function settingsPage(section) {
   $$("[data-sec]").forEach(el => io.observe(el));
   // at the very bottom of a short page the last section can't reach the top, so highlight it
   window.removeEventListener("scroll", window._sfSpy);
-  window._sfSpy = () => { if ($(".set-nav") && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) mark("api"); };
+  window._sfSpy = () => { if ($(".set-nav") && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) mark($$(".set-nav a").at(-1).dataset.s); };
   window.addEventListener("scroll", window._sfSpy, { passive: true });
 
   sync();
   $("#pv").src = embedSrc("movie", CONFIG.PREVIEW_ID, 1, 1, { autoplay: false });
-  if (["player", "browsing", "api"].includes(section)) requestAnimationFrame(() => goTo(section, false)); else mark("player");
+  if ($$(".set-nav a").some(a => a.dataset.s === section)) requestAnimationFrame(() => goTo(section, false)); else mark("player");
 }
 
 /* =====================================================================
@@ -1780,7 +1811,7 @@ async function route() {
   if (page !== "search") resetSearch();
   window.scrollTo(0, 0);
   try {
-    if (!getKey() && page !== "settings") throw new Error("NO_KEY");
+    if (!getKey() && (page !== "settings" || CONFIG.ENC_KEY)) throw new Error("NO_KEY");
     switch (page) {
       case "home": return await home();
       case "movies": if (a) { location.hash = `#discover?type=movie&genre=${a}`; return; } return await featuredPage("movie");
