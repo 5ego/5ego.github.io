@@ -46,6 +46,3 @@ A sleek, minimalist, single-file streaming web application.
 ## Disclaimer
 
 Streamed is an open-source project created strictly for educational and personal portfolio purposes. This website does not host, store, or distribute any video or copyrighted media files on its servers. All metadata and images are retrieved via the TMDB API, but Streamed is not officially endorsed or certified by TMDB.
-
-Co-authored-by: Claude <claude@anthropic.com>
-Co-authored-by: Antigravity <antigravity@google.com>
