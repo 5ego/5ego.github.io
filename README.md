@@ -8,7 +8,7 @@ A sleek, minimalist, single-file streaming web application.
 
 ## Features
 
-- **Dedicated Theater Watch Page (`#watch`)**
+- **Dedicated Watch Page (`#watch`)**
   - Modern two-column cinema layout with an immersive 16:9 responsive player.
   - Complete episode and movie metadata: titles, ratings, release dates, and full plot synopses.
   - Native Share button with clipboard fallback and toast feedback.
