@@ -266,7 +266,8 @@ a.pc:hover b{text-decoration:underline}
 /* ---------- watch page ---------- */
 .watch-page{padding:84px var(--pad) 60px}
 .watch-wrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:32px;max-width:1600px;margin:0 auto}
-.watch-wrap.movie-mode{grid-template-columns:1fr;max-width:1280px}
+.watch-wrap.movie-mode{grid-template-columns:minmax(0,1fr);max-width:1280px}
+.watch-main{min-width:0}
 .watch-player{aspect-ratio:16/9;background:#000;border-radius:var(--r);overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .watch-player iframe{width:100%;height:100%;border:0;display:block}
 .watch-info{margin-top:20px}
@@ -304,7 +305,7 @@ a.pc:hover b{text-decoration:underline}
 .sb-playing{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
 
 @media (max-width:1100px){
-  .watch-wrap{grid-template-columns:1fr}
+  .watch-wrap{grid-template-columns:minmax(0,1fr)}
   .watch-sidebar{position:static;max-height:480px;margin-top:20px}
 }
 @media (max-width:760px){
